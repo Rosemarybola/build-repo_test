@@ -1,0 +1,64 @@
+name: checkov
+on:
+  workflow_call:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+       - name: Download artifacts
+         uses: actions/download-artifact@v4
+       - run: terraform fmt --recursive     
+       - name: Checkov GitHub Action
+         uses: bridgecrewio/checkov-action@v12
+         with:
+          skip_check: CKV_TF_1   
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+4:45
+#build-repo-build.yaml
+name: build workflow
+
+on:
+   push
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+jobs:
+  build:
+     runs-on: ubuntu-latest
+     steps:
+       - run: echo "Hello"
+  startup:
+    needs: build
+    uses: Wemadevops/shared-workflows/.github/workflows/build.yaml@main
+    secrets: inherit
+    
+  plan-env:
+     needs: [ startup ]
+     if: success()
+     strategy:
+       fail-fast: false
+       matrix:
+         envi: [ dev, stage, prod ]
+     uses: Wemadevops/shared-workflows/.github/workflows/build.yaml@main 
+     secrets: inherit
+      
+  docker:
+     needs: build
+     runs-on: ubuntu-latest
+     steps:
+       - run: echo "hello"
+  trivy:
+     needs: [ docker ]
+     runs-on: ubuntu-latest
+     steps:
+       - run: echo "hello"
+  dockerise:
+     needs: trivy
+     if: success()
+     runs-on: ubuntu-latest
+     steps:
+       - run: echo "hello"
+         
