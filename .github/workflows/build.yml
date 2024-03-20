@@ -1,38 +1,41 @@
 on:
-   push
+  push
+
 jobs:
   build:
-     runs-on: ubuntu-latest
-     steps:
-       - run: echo "Hello"
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Hello"
+
   startup:
     runs-on: Ubuntu-latest
-    steps: 
+    steps:
       - run: echo "hello"
-   setup:
-     needs: [ build, docker,startup]
-     uses: ./.github/workflows/setup.yaml
-   checkov:
-     needs: setup
-     runs-on: ubuntu-latest
-     steps:
+
+  setup:
+    needs: [build, docker, startup]
+    uses: ./.github/workflows/setup.yaml
+
+  checkov:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           name: test.tf
       - run: terraform fmt -check
-   plan:
-     needs: checkov
-     if: success()
-     runs-on: ubuntu-latest
-     strategy:
-       fail-fast: false
-       matrix:
-         envi: [dev, stage, prod ]
+
+  plan:
+    needs: checkov
+    if: success()
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        envi: [dev, stage, prod]
     steps:
-     - name: Download artifacts
-       uses: actions/download-artifact@v4
-       with: 
-         name: test.tf
-   
-     
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with: 
+          name: test.tf
