@@ -1,44 +1,38 @@
-name: build workflow
-
 on:
    push
-
-env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 jobs:
   build:
      runs-on: ubuntu-latest
      steps:
        - run: echo "Hello"
   startup:
-    needs: build
-    uses: Wemadevops/shared-workflows/.github/workflows/build.yaml@main
-    secrets: inherit
-    
-  plan-env:
-     needs: [ startup ]
+    runs-on: Ubuntu-latest
+    steps: 
+      - run: echo "hello"
+   setup:
+     needs: [ build, docker,startup]
+     uses: ./.github/workflows/setup.yaml
+   checkov:
+     needs: setup
+     runs-on: ubuntu-latest
+     steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test.tf
+      - run: terraform fmt -check
+   plan:
+     needs: checkov
      if: success()
+     runs-on: ubuntu-latest
      strategy:
        fail-fast: false
        matrix:
-         envi: [ dev, stage, prod ]
-     uses: Wemadevops/shared-workflows/.github/workflows/build.yaml@main 
-     secrets: inherit
-      
-  docker:
-     needs: build
-     runs-on: ubuntu-latest
-     steps:
-       - run: echo "hello"
-  trivy:
-     needs: [ docker ]
-     runs-on: ubuntu-latest
-     steps:
-       - run: echo "hello"
-  dockerise:
-     needs: trivy
-     if: success()
-     runs-on: ubuntu-latest
-     steps:
-       - run: echo "hello"
+         envi: [dev, stage, prod ]
+    steps:
+     - name: Download artifacts
+       uses: actions/download-artifact@v4
+       with: 
+         name: test.tf
+   
+     
